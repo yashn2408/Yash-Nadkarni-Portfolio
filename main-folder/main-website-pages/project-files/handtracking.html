@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Glove & Voice to Braille</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #090909;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    .box {
+      background: white;
+      padding: 20px;
+      /* border-radius: 10px; */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      text-align: center;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .value {
+      font-size: 1.5em;
+      color: #007bff;
+    }
+
+    .braille-strip {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .braille-cell {
+      width: 24px;
+      height: 36px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 3px;
+    }
+
+    .braille-dot {
+      width: 8px;
+      height: 8px;
+      background: transparent;
+      border-radius: 50%;
+    }
+
+    .braille-dot.filled {
+      background: black;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      /* border-radius: 6px; */
+      background-color: #c8ff00;
+      color: black;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color:  #d8ec8d;
+    }
+
+    #output {
+      width: 100%;
+      max-width: 1000px;
+      background: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      /* border-radius: 8px; */
+      font-size: 1.1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Smart Glove & Voice to Braille</h1>
+
+  <!-- Sensor Dashboard -->
+  <div class="container">
+    <div class="box">
+      <h2>Flex Sensor Values</h2>
+      <div class="label">Thumb: <span class="value" id="thumb">--</span></div>
+      <div class="label">Index: <span class="value" id="index">--</span></div>
+      <div class="label">Middle: <span class="value" id="middle">--</span></div>
+    </div>
+
+    <div class="box">
+      <h2>Detected Word</h2>
+      <div class="value" id="gestureWord">--</div>
+    </div>
+  </div>
+
+  <!-- Voice to Braille -->
+  <div class="braille-strip" id="braille-strip"></div>
+  <div class="controls">
+    <button id="prev-btn">🡨 Back</button>
+    <button id="start-btn">Start Listening</button>
+    <button id="next-btn">Forward 🡪</button>
+  </div>
+  <div id="output">Your speech will appear here...</div>
+
+  <script>
+    // 1. === SMART GLOVE FETCH LOGIC ===
+    const SERVER_IP = "http://10.159.200.209"; // Replace with your Arduino IP
+
+    function interpretGesture(thumb, index, middle) {
+      if (thumb > 70 && index > 70 && middle > 70) return "HELLO";
+      else if (thumb < 70 && index < 50 && middle < 50) return "NO";
+      else if (thumb > 60 && index < 60 && middle < 60) return "YES RIGHT";
+      else if (thumb < 70 && index > 60 && middle > 60) return "I UNDERSTOOD";
+      else if (thumb < 70 && index > 50 && middle < 70) return "I HAVE A DOUBT";
+      else return "UNKNOWN";
+    }
+
+    async function fetchSensorData() {
+      try {
+        const response = await fetch(SERVER_IP);
+        const data = await response.json();
+
+        const thumb = data.thumb;
+        const index = data.index;
+        const middle = data.middle;
+
+        document.getElementById("thumb").innerText = thumb;
+        document.getElementById("index").innerText = index;
+        document.getElementById("middle").innerText = middle;
+
+        const word = interpretGesture(thumb, index, middle);
+        document.getElementById("gestureWord").innerText = word;
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    }
+
+    setInterval(fetchSensorData, 1000);
+
+    // 2. === VOICE TO BRAILLE LOGIC ===
+    const output = document.getElementById("output");
+    const startBtn = document.getElementById("start-btn");
+    const brailleStrip = document.getElementById("braille-strip");
+    const prevBtn = document.getElementById("prev-btn");
+    const nextBtn = document.getElementById("next-btn");
+
+    let recognizing = false;
+    let recognition;
+    let transcript = "";
+    let currentIndex = 0;
+
+    const brailleMap = {
+      a:[1,0,0,0,0,0], b:[1,1,0,0,0,0], c:[1,0,0,1,0,0], d:[1,0,0,1,1,0],
+      e:[1,0,0,0,1,0], f:[1,1,0,1,0,0], g:[1,1,0,1,1,0], h:[1,1,0,0,1,0],
+      i:[0,1,0,1,0,0], j:[0,1,0,1,1,0], k:[1,0,1,0,0,0], l:[1,1,1,0,0,0],
+      m:[1,0,1,1,0,0], n:[1,0,1,1,1,0], o:[1,0,1,0,1,0], p:[1,1,1,1,0,0],
+      q:[1,1,1,1,1,0], r:[1,1,1,0,1,0], s:[0,1,1,1,0,0], t:[0,1,1,1,1,0],
+      u:[1,0,1,0,0,1], v:[1,1,1,0,0,1], w:[0,1,0,1,1,1], x:[1,0,1,1,0,1],
+      y:[1,0,1,1,1,1], z:[1,0,1,0,1,1], " ":[0,0,0,0,0,0], ".":[0,1,0,0,1,1],
+      ",":[0,1,0,0,0,0], "#":[0,1,1,1,1,1],
+      "1":[1,0,0,0,0,0], "2":[1,1,0,0,0,0], "3":[1,0,0,1,0,0],
+      "4":[1,0,0,1,1,0], "5":[1,0,0,0,1,0], "6":[1,1,0,1,0,0],
+      "7":[1,1,0,1,1,0], "8":[1,1,0,0,1,0], "9":[0,1,0,1,0,0], "0":[0,1,0,1,1,0]
+    };
+async function sendToLCD(text) {
+  try {
+    await fetch(SERVER_IP + "/lcd", {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "text/plain" },
+      body: text
+    });
+  } catch (err) {
+    console.error("LCD send error:", err);
+  }
+}
+
+function renderBrailleSegment(start) {
+  brailleStrip.innerHTML = "";
+  const slice = transcript.slice(start, start + 14).toLowerCase();
+
+  for (let i = 0; i < 14; i++) {
+    const char = slice[i] || " ";
+    const pattern = brailleMap[char] || [0, 0, 0, 0, 0, 0];
+    const cell = document.createElement("div");
+    cell.className = "braille-cell";
+
+    const dotOrder = [0, 3, 1, 4, 2, 5];
+    dotOrder.forEach((index) => {
+      const dotEl = document.createElement("div");
+      dotEl.className = "braille-dot";
+      if (pattern[index] === 1) dotEl.classList.add("filled");
+      cell.appendChild(dotEl);
+    });
+
+    brailleStrip.appendChild(cell);
+  }
+
+  sendToLCD(slice);
+}
+
+    if ("webkitSpeechRecognition" in window) {
+      recognition = new webkitSpeechRecognition();
+    } else if ("SpeechRecognition" in window) {
+      recognition = new SpeechRecognition();
+    } else {
+      alert("Your browser doesn't support speech recognition.");
+    }
+
+    if (recognition) {
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const spoken = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            transcript += spoken;
+            renderBrailleSegment(currentIndex);
+          } else {
+            interim += spoken;
+          }
+        }
+        output.textContent = transcript + interim;
+      };
+
+      recognition.onend = () => {
+        recognizing = false;
+        startBtn.textContent = "Start Listening";
+      };
+
+      startBtn.addEventListener("click", () => {
+        if (!recognizing) {
+          recognition.start();
+          recognizing = true;
+          startBtn.textContent = "Stop Listening";
+        } else {
+          recognition.stop();
+          recognizing = false;
+          startBtn.textContent = "Start Listening";
+        }
+      });
+    }
+
+    nextBtn.addEventListener("click", () => {
+      if (currentIndex + 14 < transcript.length) {
+        currentIndex += 14;
+        renderBrailleSegment(currentIndex);
+      }
+    });
+
+    prevBtn.addEventListener("click", () => {
+      if (currentIndex - 14 >= 0) {
+        currentIndex -= 14;
+        renderBrailleSegment(currentIndex);
+      }
+    });
+  </script>
+</body>
+</html>

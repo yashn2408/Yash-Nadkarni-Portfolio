@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Yash Nadkarni Portfoilo | Spaceship Coin Game</title>
+    <!-- For .ico format -->
+    <link rel="icon" href="/public/media/images/my-image.jpg" type="image/x-icon" />
+
+    <!-- Or for .png format -->
+    <link rel="icon" href="/public/media/images/my-image.jpg" type="image/png" />
+    <link rel="stylesheet" href="/public/css/colors.css" />
+    <link rel="stylesheet" href="/public/css/style.css" />
+    <link rel="stylesheet" href="/public/css/text.css">
+    <link rel="stylesheet" href="/public/css/buttons-tags/buttons.css" />
+    <link rel="stylesheet" href="/public/css/pages/game.css">
+  </head>
+  <body>
+    <!-- Return to Portfolio Button -->
+    <a
+      id="returnToPortfolio"
+      class="button-secondary-filled-large-texticon"
+      href="/"
+      target="_blank"
+      ><span class="button-secondary-filled-large-texticon-text"
+        >Return to Portfolio</span
+      ></a
+    >
+    <!-- Start Game Modal -->
+    <div id="startModal">
+      <h1>🚀 I like your curiosity</h1>
+      <p>But it's all about fun here 😎</p>
+      <div class="cta-container">
+        <button id="startButton" class="button-primary-filled-large-texticon">
+          <span class="button-primary-filled-large-texticon-text"
+            >Start the Game</span
+          >
+          <div class="button-primary-filled-large-texticon-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 28 28"
+              fill="none"
+            >
+              <path
+                d="M15.75 5.25L14.4987 6.46888L21.1312 13.125H3.5V14.875H21.1312L14.4987 21.5014L15.75 22.75L24.5 14L15.75 5.25Z"
+                fill="white"
+              />
+            </svg>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">Your Score: 0</div>
+    <div id="highScore">Public High Score: 0</div>
+
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal">
+      <h1>💥 GAME OVER</h1>
+      <p>I thought you had come here to see my portfolio 😏</p>
+
+      <div class="cta-container">
+        <a
+          href="#"
+          onclick="location.reload()"
+          class="button-primary-filled-large-texticon"
+        >
+          <span class="button-primary-filled-large-texticon-text">
+            Play Again
+          </span>
+          <div class="button-primary-filled-large-texticon-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 28 28"
+              fill="none"
+            >
+              <path
+                d="M15.75 5.25L14.4987 6.46888L21.1312 13.125H3.5V14.875H21.1312L14.4987 21.5014L15.75 22.75L24.5 14L15.75 5.25Z"
+                fill="white"
+              />
+            </svg>
+          </div>
+        </a>
+
+        <a
+          href="/"
+          target="_blank"
+          class="button-secondary-filled-large-texticon"
+        >
+          <span class="button-secondary-filled-large-texticon-text">
+            Go to Portfolio
+          </span>
+          <div class="button-secondary-filled-large-texticon-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="28"
+              height="28"
+              viewBox="0 0 28 28"
+              fill="none"
+            >
+              <path
+                d="M15.75 5.25L14.4987 6.46888L21.1312 13.125H3.5V14.875H21.1312L14.4987 21.5014L15.75 22.75L24.5 14L15.75 5.25Z"
+                fill="#1E1E1E"
+              />
+            </svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <script src="/public/js/game-js/game.js"></script>
+  </body>
+</html>
